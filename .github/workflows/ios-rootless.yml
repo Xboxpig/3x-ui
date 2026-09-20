@@ -2,16 +2,6 @@ name: Build rootless iOS package
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - ios16-rootless
-    paths:
-      - '.github/workflows/ios-rootless.yml'
-      - 'ios/**'
-      - 'x-ui.sh'
-      - '**/*.go'
-      - 'go.mod'
-      - 'go.sum'
 
 jobs:
   build:
