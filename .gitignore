@@ -14,3 +14,5 @@ dist/
 release/
 /release.sh
 /x-ui
+/ios/build/
+/ios/assets/*.dat

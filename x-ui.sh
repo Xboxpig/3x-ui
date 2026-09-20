@@ -1,9 +1,23 @@
-#!/bin/bash
+#!/var/jb/usr/bin/bash
+
+# Upstream: MHSanaei/3x-ui x-ui.sh v2.3.8
+# iOS port: rootless paths and launchd service control only.
 
 red='\033[0;31m'
 green='\033[0;32m'
 yellow='\033[0;33m'
 plain='\033[0m'
+
+XUI_HOME=/var/jb/usr/local/x-ui
+XUI_REAL=${XUI_HOME}/x-ui.real
+XUI_PLIST=/var/jb/Library/LaunchDaemons/com.xboxpig.3x-ui.plist
+XUI_PLIST_DISABLED=/var/jb/Library/LaunchDaemons/com.xboxpig.3x-ui.plist.disabled
+XUI_SERVICE=user/501/com.xboxpig.3x-ui
+LAUNCHCTL=/var/jb/usr/bin/launchctl
+export XUI_BIN_FOLDER=${XUI_HOME}/bin
+export XUI_DB_FOLDER=/var/jb/etc/x-ui
+export XUI_LOG_FOLDER=/var/jb/var/log/x-ui
+export XRAY_LOCATION_ASSET=${XUI_HOME}/bin
 
 #Add some basic function here
 function LOGD() {
@@ -18,82 +32,20 @@ function LOGI() {
     echo -e "${green}[INF] $* ${plain}"
 }
 
+ios_unsupported() {
+    LOGE "$1 is not available in the jailbroken iOS port. Use the installed Sileo package or the iOS-specific service files."
+    if [[ $# == 1 && -t 0 ]]; then
+        before_show_menu
+    fi
+}
+
 # check root
 [[ $EUID -ne 0 ]] && LOGE "ERROR: You must be root to run this script! \n" && exit 1
 
-# Check OS and set release variable
-if [[ -f /etc/os-release ]]; then
-    source /etc/os-release
-    release=$ID
-elif [[ -f /usr/lib/os-release ]]; then
-    source /usr/lib/os-release
-    release=$ID
-else
-    echo "Failed to check the system OS, please contact the author!" >&2
-    exit 1
-fi
-
-echo "The OS release is: $release"
-
-os_version=""
-os_version=$(grep -i version_id /etc/os-release | cut -d \" -f2 | cut -d . -f1)
-
-if [[ "${release}" == "arch" ]]; then
-    echo "Your OS is Arch Linux"
-elif [[ "${release}" == "parch" ]]; then
-    echo "Your OS is Parch linux"
-elif [[ "${release}" == "manjaro" ]]; then
-    echo "Your OS is Manjaro"
-elif [[ "${release}" == "armbian" ]]; then
-    echo "Your OS is Armbian"
-elif [[ "${release}" == "opensuse-tumbleweed" ]]; then
-    echo "Your OS is OpenSUSE Tumbleweed"
-elif [[ "${release}" == "centos" ]]; then
-    if [[ ${os_version} -lt 8 ]]; then
-        echo -e "${red} Please use CentOS 8 or higher ${plain}\n" && exit 1
-    fi
-elif [[ "${release}" == "ubuntu" ]]; then
-    if [[ ${os_version} -lt 20 ]]; then
-        echo -e "${red} Please use Ubuntu 20 or higher version!${plain}\n" && exit 1
-    fi
-elif [[ "${release}" == "fedora" ]]; then
-    if [[ ${os_version} -lt 36 ]]; then
-        echo -e "${red} Please use Fedora 36 or higher version!${plain}\n" && exit 1
-    fi
-elif [[ "${release}" == "debian" ]]; then
-    if [[ ${os_version} -lt 11 ]]; then
-        echo -e "${red} Please use Debian 11 or higher ${plain}\n" && exit 1
-    fi
-elif [[ "${release}" == "almalinux" ]]; then
-    if [[ ${os_version} -lt 9 ]]; then
-        echo -e "${red} Please use AlmaLinux 9 or higher ${plain}\n" && exit 1
-    fi
-elif [[ "${release}" == "rocky" ]]; then
-    if [[ ${os_version} -lt 9 ]]; then
-        echo -e "${red} Please use Rocky Linux 9 or higher ${plain}\n" && exit 1
-    fi
-elif [[ "${release}" == "oracle" ]]; then
-    if [[ ${os_version} -lt 8 ]]; then
-        echo -e "${red} Please use Oracle Linux 8 or higher ${plain}\n" && exit 1
-    fi
-else
-    echo -e "${red}Your operating system is not supported by this script.${plain}\n"
-    echo "Please ensure you are using one of the following supported operating systems:"
-    echo "- Ubuntu 20.04+"
-    echo "- Debian 11+"
-    echo "- CentOS 8+"
-    echo "- Fedora 36+"
-    echo "- Arch Linux"
-    echo "- Parch Linux"
-    echo "- Manjaro"
-    echo "- Armbian"
-    echo "- AlmaLinux 9+"
-    echo "- Rocky Linux 9+"
-    echo "- Oracle Linux 8+"
-    echo "- OpenSUSE Tumbleweed"
-    exit 1
-
-fi
+# iOS is the platform selected by this port. Linux-only menu items are retained
+# in their upstream positions but report that they are unavailable.
+release=ios
+os_version=16
 
 # Declare Variables
 log_folder="${XUI_LOG_FOLDER:=/var/log}"
@@ -243,8 +195,8 @@ reset_user() {
     [[ -z $config_account ]] && config_account=$(date +%s%N | md5sum | cut -c 1-8)
     read -rp "Please set the login password [default is a random password]: " config_password
     [[ -z $config_password ]] && config_password=$(date +%s%N | md5sum | cut -c 1-8)
-    /usr/local/x-ui/x-ui setting -username ${config_account} -password ${config_password} >/dev/null 2>&1
-    /usr/local/x-ui/x-ui setting -remove_secret >/dev/null 2>&1
+    "$XUI_REAL" setting -username ${config_account} -password ${config_password} >/dev/null 2>&1
+    "$XUI_REAL" setting -remove_secret >/dev/null 2>&1
     echo -e "Panel login username has been reset to: ${green} ${config_account} ${plain}"
     echo -e "Panel login password has been reset to: ${green} ${config_password} ${plain}"
     echo -e "${yellow} Panel login secret token disabled ${plain}"
@@ -269,8 +221,8 @@ reset_webbasepath() {
     fi
     
     # Apply the new web base path setting
-    /usr/local/x-ui/x-ui setting -webBasePath "${config_webBasePath}" >/dev/null 2>&1
-    systemctl restart x-ui
+    "$XUI_REAL" setting -webBasePath "${config_webBasePath}" >/dev/null 2>&1
+    restart 0
     
     # Display confirmation message
     echo -e "Web base path has been reset to: ${green}${config_webBasePath}${plain}"
@@ -285,13 +237,13 @@ reset_config() {
         fi
         return 0
     fi
-    /usr/local/x-ui/x-ui setting -reset
+    "$XUI_REAL" setting -reset
     echo -e "All panel settings have been reset to default, Please restart the panel now, and use the default ${green}2053${plain} Port to Access the web Panel"
     confirm_restart
 }
 
 check_config() {
-    info=$(/usr/local/x-ui/x-ui setting -show true)
+    info=$("$XUI_REAL" setting -show true)
     if [[ $? != 0 ]]; then
         LOGE "get current settings error, please check logs"
         show_menu
@@ -305,7 +257,7 @@ set_port() {
         LOGD "Cancelled"
         before_show_menu
     else
-        /usr/local/x-ui/x-ui setting -port ${port}
+        "$XUI_REAL" setting -port ${port}
         echo -e "The port is set, Please restart the panel now, and use the new port ${green}${port}${plain} to access web panel"
         confirm_restart
     fi
@@ -317,7 +269,9 @@ start() {
         echo ""
         LOGI "Panel is running, No need to start again, If you need to restart, please select restart"
     else
-        systemctl start x-ui
+        local plist="$XUI_PLIST"
+        [[ -f "$plist" ]] || plist="$XUI_PLIST_DISABLED"
+        "$LAUNCHCTL" bootstrap user/501 "$plist" >/dev/null 2>&1 || "$LAUNCHCTL" kickstart "$XUI_SERVICE"
         sleep 2
         check_status
         if [[ $? == 0 ]]; then
@@ -338,7 +292,7 @@ stop() {
         echo ""
         LOGI "Panel stopped, No need to stop again!"
     else
-        systemctl stop x-ui
+        "$LAUNCHCTL" bootout "$XUI_SERVICE" >/dev/null 2>&1 || true
         sleep 2
         check_status
         if [[ $? == 1 ]]; then
@@ -354,7 +308,13 @@ stop() {
 }
 
 restart() {
-    systemctl restart x-ui
+    if "$LAUNCHCTL" print "$XUI_SERVICE" >/dev/null 2>&1; then
+        "$LAUNCHCTL" kickstart -k "$XUI_SERVICE"
+    else
+        local plist="$XUI_PLIST"
+        [[ -f "$plist" ]] || plist="$XUI_PLIST_DISABLED"
+        "$LAUNCHCTL" bootstrap user/501 "$plist"
+    fi
     sleep 2
     check_status
     if [[ $? == 0 ]]; then
@@ -368,15 +328,23 @@ restart() {
 }
 
 status() {
-    systemctl status x-ui -l
+    if "$LAUNCHCTL" print "$XUI_SERVICE" >/dev/null 2>&1; then
+        "$LAUNCHCTL" print "$XUI_SERVICE" | sed -n '/state = /p;/pid = /p;/last exit code = /p'
+        /bin/ps ax -o pid=,command= | grep -E '[x]-ui\.real|[x]ray-ios-arm64\.real' || true
+    else
+        LOGI "x-ui launchd service is not loaded"
+    fi
     if [[ $# == 0 ]]; then
         before_show_menu
     fi
 }
 
 enable() {
-    systemctl enable x-ui
-    if [[ $? == 0 ]]; then
+    if [[ -f "$XUI_PLIST_DISABLED" ]]; then
+        mv "$XUI_PLIST_DISABLED" "$XUI_PLIST"
+    fi
+    if [[ -f "$XUI_PLIST" ]]; then
+        "$LAUNCHCTL" bootstrap user/501 "$XUI_PLIST" >/dev/null 2>&1 || true
         LOGI "x-ui Set to boot automatically on startup successfully"
     else
         LOGE "x-ui Failed to set Autostart"
@@ -388,8 +356,11 @@ enable() {
 }
 
 disable() {
-    systemctl disable x-ui
-    if [[ $? == 0 ]]; then
+    "$LAUNCHCTL" bootout "$XUI_SERVICE" >/dev/null 2>&1 || true
+    if [[ -f "$XUI_PLIST" ]]; then
+        mv "$XUI_PLIST" "$XUI_PLIST_DISABLED"
+    fi
+    if [[ -f "$XUI_PLIST_DISABLED" ]]; then
         LOGI "x-ui Autostart Cancelled successfully"
     else
         LOGE "x-ui Failed to cancel autostart"
@@ -401,7 +372,9 @@ disable() {
 }
 
 show_log() {
-    journalctl -u x-ui.service -e --no-pager -f
+    echo -e "${yellow}Following x-ui logs; press Ctrl-C to stop.${plain}"
+    tail -n 100 -F /var/jb/var/log/x-ui/service.stdout.log \
+        /var/jb/var/log/x-ui/service.stderr.log /var/jb/usr/local/x-ui/error.log
     if [[ $# == 0 ]]; then
         before_show_menu
     fi
@@ -515,11 +488,10 @@ update_shell() {
 
 # 0: running, 1: not running, 2: not installed
 check_status() {
-    if [[ ! -f /etc/systemd/system/x-ui.service ]]; then
+    if [[ ! -x "$XUI_REAL" ]] || [[ ! -f "$XUI_PLIST" && ! -f "$XUI_PLIST_DISABLED" ]]; then
         return 2
     fi
-    temp=$(systemctl status x-ui | grep Active | awk '{print $3}' | cut -d "(" -f2 | cut -d ")" -f1)
-    if [[ "${temp}" == "running" ]]; then
+    if "$LAUNCHCTL" print "$XUI_SERVICE" 2>/dev/null | grep -q 'state = running'; then
         return 0
     else
         return 1
@@ -527,8 +499,7 @@ check_status() {
 }
 
 check_enabled() {
-    temp=$(systemctl is-enabled x-ui)
-    if [[ "${temp}" == "enabled" ]]; then
+    if [[ -f "$XUI_PLIST" ]]; then
         return 0
     else
         return 1
@@ -591,7 +562,7 @@ show_enable_status() {
 }
 
 check_xray_status() {
-    count=$(ps -ef | grep "xray-linux" | grep -v "grep" | wc -l)
+    count=$(/bin/ps ax -o command= | grep "[x]ray-ios-arm64.real" | wc -l)
     if [[ count -ne 0 ]]; then
         return 0
     else
@@ -1325,11 +1296,11 @@ show_menu() {
   ${green}3X-UI Panel Management Script${plain}
   ${green}0.${plain} Exit Script
 ————————————————
-  ${green}1.${plain} Install
-  ${green}2.${plain} Update
-  ${green}3.${plain} Update Menu
-  ${green}4.${plain} Custom Version
-  ${green}5.${plain} Uninstall
+  ${green}1.${plain} Install ${yellow}(use Sileo on iOS)${plain}
+  ${green}2.${plain} Update ${yellow}(use Sileo on iOS)${plain}
+  ${green}3.${plain} Update Menu ${yellow}(iOS port is pinned to v2.3.8)${plain}
+  ${green}4.${plain} Custom Version ${yellow}(use Sileo on iOS)${plain}
+  ${green}5.${plain} Uninstall ${yellow}(use Sileo on iOS)${plain}
 ————————————————
   ${green}6.${plain} Reset Username & Password & Secret Token
   ${green}7.${plain} Reset Web Base Path
@@ -1346,15 +1317,15 @@ show_menu() {
   ${green}16.${plain} Enable Autostart
   ${green}17.${plain} Disable Autostart
 ————————————————
-  ${green}18.${plain} SSL Certificate Management
-  ${green}19.${plain} Cloudflare SSL Certificate
-  ${green}20.${plain} IP Limit Management
-  ${green}21.${plain} WARP Management
-  ${green}22.${plain} Firewall Management
+  ${green}18.${plain} SSL Certificate Management ${yellow}(not available on iOS)${plain}
+  ${green}19.${plain} Cloudflare SSL Certificate ${yellow}(not available on iOS)${plain}
+  ${green}20.${plain} IP Limit Management ${yellow}(not available on iOS)${plain}
+  ${green}21.${plain} WARP Management ${yellow}(not available on iOS)${plain}
+  ${green}22.${plain} Firewall Management ${yellow}(not available on iOS)${plain}
 ————————————————
-  ${green}23.${plain} Enable BBR 
-  ${green}24.${plain} Update Geo Files
-  ${green}25.${plain} Speedtest by Ookla
+  ${green}23.${plain} Enable BBR ${yellow}(not available on iOS)${plain}
+  ${green}24.${plain} Update Geo Files ${yellow}(use Sileo package on iOS)${plain}
+  ${green}25.${plain} Speedtest by Ookla ${yellow}(not available on iOS)${plain}
 "
     show_status
     echo && read -p "Please enter your selection [0-25]: " num
@@ -1364,19 +1335,19 @@ show_menu() {
         exit 0
         ;;
     1)
-        check_uninstall && install
+        ios_unsupported "Install"
         ;;
     2)
-        check_install && update
+        ios_unsupported "Update"
         ;;
     3)
-        check_install && update_menu
+        ios_unsupported "Update Menu"
         ;;
     4)
-        check_install && custom_version
+        ios_unsupported "Custom Version"
         ;;
     5)
-        check_install && uninstall
+        ios_unsupported "Uninstall"
         ;;
     6)
         check_install && reset_user
@@ -1415,28 +1386,28 @@ show_menu() {
         check_install && disable
         ;;
     18)
-        ssl_cert_issue_main
+        ios_unsupported "SSL Certificate Management"
         ;;
     19)
-        ssl_cert_issue_CF
+        ios_unsupported "Cloudflare SSL Certificate"
         ;;
     20)
-        iplimit_main
+        ios_unsupported "IP Limit Management"
         ;;
     21)
-        warp_cloudflare
+        ios_unsupported "WARP Management"
         ;;
     22)
-        firewall_menu
+        ios_unsupported "Firewall Management"
         ;;
     23)
-        bbr_menu
+        ios_unsupported "BBR Management"
         ;;
     24)
-        update_geo
+        ios_unsupported "Geo File Update"
         ;;
     25)
-        run_speedtest
+        ios_unsupported "Speedtest"
         ;;
     *)
         LOGE "Please enter the correct number [0-25]"
@@ -1474,16 +1445,16 @@ if [[ $# > 0 ]]; then
         check_install 0 && show_banlog 0
         ;;
     "update")
-        check_install 0 && update 0
+        ios_unsupported "Update" 0
         ;;
     "custom")
-        check_install 0 && custom_version 0
+        ios_unsupported "Custom Version" 0
         ;;
     "install")
-        check_uninstall 0 && install 0
+        ios_unsupported "Install" 0
         ;;
     "uninstall")
-        check_install 0 && uninstall 0
+        ios_unsupported "Uninstall" 0
         ;;
     *) show_usage ;;
     esac

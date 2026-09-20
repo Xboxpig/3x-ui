@@ -4,6 +4,10 @@
 
 **一个更好的面板 • 基于Xray Core构建**
 
+> **Rootless iOS 16 移植版：**本分支加入了 launchd 后台服务、兼容 Sileo 的
+> Debian 包、Jetsam launcher，以及适配越狱 iOS 的官方管理 CLI。构建与安装方式
+> 见 [ios/README.md](ios/README.md)。当前经过实机验证的基线为上游 `v2.3.8`。
+
 [![](https://img.shields.io/github/v/release/mhsanaei/3x-ui.svg)](https://github.com/MHSanaei/3x-ui/releases)
 [![](https://img.shields.io/github/actions/workflow/status/mhsanaei/3x-ui/release.yml.svg)](#)
 [![GO Version](https://img.shields.io/github/go-mod/go-version/mhsanaei/3x-ui.svg)](#)

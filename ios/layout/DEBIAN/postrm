@@ -1,0 +1,8 @@
+#!/var/jb/usr/bin/sh
+set -e
+
+if [ "${1:-}" = purge ]; then
+    rm -rf /var/jb/etc/x-ui /var/jb/var/log/x-ui
+fi
+
+exit 0

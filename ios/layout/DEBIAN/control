@@ -1,0 +1,11 @@
+Package: com.xboxpig.3x-ui
+Name: 3x-ui for rootless iOS
+Version: @PACKAGE_VERSION@
+Architecture: iphoneos-arm64
+Description: 3x-ui and Xray-core port for rootless jailbroken iOS 16
+Maintainer: Xboxpig
+Author: MHSanaei and contributors; iOS packaging by Xboxpig
+Section: Networking
+Priority: optional
+Depends: firmware (>= 16.0), bash, ldid
+Homepage: https://github.com/Xboxpig/3x-ui
