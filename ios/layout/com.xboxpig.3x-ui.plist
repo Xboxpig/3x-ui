@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.xboxpig.3x-ui</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/var/jb/usr/local/x-ui/x-ui</string>
+        <string>run</string>
+    </array>
+    <key>WorkingDirectory</key>
+    <string>/var/jb/usr/local/x-ui</string>
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>HOME</key>
+        <string>/var/jb/var/root</string>
+        <key>PATH</key>
+        <string>/var/jb/usr/local/x-ui:/var/jb/usr/bin:/var/jb/usr/sbin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+        <key>XUI_BIN_FOLDER</key>
+        <string>/var/jb/usr/local/x-ui/bin</string>
+        <key>XUI_DB_FOLDER</key>
+        <string>/var/jb/etc/x-ui</string>
+        <key>XUI_LOG_FOLDER</key>
+        <string>/var/jb/var/log/x-ui</string>
+        <key>XRAY_LOCATION_ASSET</key>
+        <string>/var/jb/usr/local/x-ui/bin</string>
+    </dict>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <true/>
+    <key>ThrottleInterval</key>
+    <integer>5</integer>
+    <key>ProcessType</key>
+    <string>Interactive</string>
+    <key>POSIXSpawnType</key>
+    <string>Interactive</string>
+    <key>JetsamProperties</key>
+    <dict>
+        <key>JetsamMemoryLimit</key>
+        <integer>256</integer>
+        <key>JetsamPriority</key>
+        <integer>40</integer>
+    </dict>
+    <key>StandardOutPath</key>
+    <string>/var/jb/var/log/x-ui/service.stdout.log</string>
+    <key>StandardErrorPath</key>
+    <string>/var/jb/var/log/x-ui/service.stderr.log</string>
+</dict>
+</plist>

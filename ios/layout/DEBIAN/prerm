@@ -1,0 +1,5 @@
+#!/var/jb/usr/bin/sh
+set -e
+
+/var/jb/usr/bin/launchctl bootout user/501/com.xboxpig.3x-ui >/dev/null 2>&1 || true
+exit 0

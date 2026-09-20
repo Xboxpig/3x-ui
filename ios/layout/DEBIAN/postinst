@@ -1,0 +1,26 @@
+#!/var/jb/usr/bin/sh
+set -e
+
+XUI_HOME=/var/jb/usr/local/x-ui
+PLIST=/var/jb/Library/LaunchDaemons/com.xboxpig.3x-ui.plist
+LAUNCHCTL=/var/jb/usr/bin/launchctl
+
+mkdir -p /var/jb/etc/x-ui /var/jb/var/log/x-ui
+chmod 0700 /var/jb/etc/x-ui
+chmod 0750 /var/jb/var/log/x-ui
+chmod 0755 \
+    "$XUI_HOME/x-ui" \
+    "$XUI_HOME/x-ui.real" \
+    "$XUI_HOME/x-ui.sh" \
+    "$XUI_HOME/bin/xray-ios-arm64" \
+    "$XUI_HOME/bin/xray-ios-arm64.real"
+
+/var/jb/usr/bin/ldid -S "$XUI_HOME/x-ui"
+/var/jb/usr/bin/ldid -S "$XUI_HOME/x-ui.real"
+/var/jb/usr/bin/ldid -S "$XUI_HOME/bin/xray-ios-arm64"
+/var/jb/usr/bin/ldid -S "$XUI_HOME/bin/xray-ios-arm64.real"
+
+"$LAUNCHCTL" bootout user/501/com.xboxpig.3x-ui >/dev/null 2>&1 || true
+"$LAUNCHCTL" bootstrap user/501 "$PLIST" >/dev/null 2>&1 || true
+
+exit 0

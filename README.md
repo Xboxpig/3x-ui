@@ -4,6 +4,11 @@
 
 **An Advanced Web Panel • Built on Xray Core**
 
+> **Rootless iOS 16 port:** this branch adds a launchd service, a Sileo-compatible
+> Debian package, a Jetsam-aware launcher, and the official management CLI adapted
+> for jailbroken iOS. See [ios/README.md](ios/README.md). The tested port is based
+> on upstream `v2.3.8`.
+
 [![](https://img.shields.io/github/v/release/mhsanaei/3x-ui.svg)](https://github.com/MHSanaei/3x-ui/releases)
 [![](https://img.shields.io/github/actions/workflow/status/mhsanaei/3x-ui/release.yml.svg)](#)
 [![GO Version](https://img.shields.io/github/go-mod/go-version/mhsanaei/3x-ui.svg)](#)
